@@ -1,0 +1,7 @@
+# Postfix PostgreSQL Virtual Mailbox Domains Map
+# Connects to NitechSpark PostgreSQL database
+hosts = localhost
+user = nitechspark
+password = changeme_development
+dbname = nitechspark_mail
+query = SELECT domain_name FROM domains WHERE domain_name='%s' AND status='ACTIVE'

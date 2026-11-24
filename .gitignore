@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.next/
+*.env
+.env.local
+.env.production
+*.log
+coverage/
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
+/tmp/
+attachments/
+prisma/migrations/*/migration.sql

@@ -1,0 +1,362 @@
+// NITECHSPARK Mail - Prisma Database Schema
+// PostgreSQL with full migration support
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---- User ----
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  displayName  String     @map("display_name")
+  passwordHash String     @map("password_hash")
+  status       UserStatus @default(ACTIVE)
+  role         UserRole   @default(USER)
+  avatarUrl    String?    @map("avatar_url")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  lastLoginAt  DateTime?  @map("last_login_at")
+
+  // Relations
+  mailAccounts MailAccount[]
+  sessions     Session[]
+  contacts     Contact[]
+  contactGroups ContactGroup[]
+  emailSettings EmailSettings?
+  emailSignatures EmailSignature[]
+  auditLogs    AuditLog[]
+  loginAttempts LoginAttempt[]
+  passwordResets PasswordReset[]
+
+  @@map("users")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// ---- Domain ----
+model Domain {
+  id                 String                  @id @default(uuid())
+  domainName         String                  @unique @map("domain_name")
+  status             DomainStatus            @default(ACTIVE)
+  verificationStatus DomainVerificationStatus @default(PENDING) @map("verification_status")
+  mxRecord           String?                 @map("mx_record")
+  spfRecord          String?                 @map("spf_record")
+  dkimRecord         String?                 @map("dkim_record")
+  dmarcRecord        String?                 @map("dmarc_record")
+  imapHost           String?                 @map("imap_host")
+  imapPort           Int?                    @map("imap_port")
+  smtpHost           String?                 @map("smtp_host")
+  smtpPort           Int?                    @map("smtp_port")
+  createdAt          DateTime                @default(now()) @map("created_at")
+  updatedAt          DateTime                @updatedAt @map("updated_at")
+
+  mailAccounts MailAccount[]
+
+  @@map("domains")
+}
+
+enum DomainStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum DomainVerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}
+
+// ---- Mail Account ----
+model MailAccount {
+  id             String            @id @default(uuid())
+  userId         String            @map("user_id")
+  domainId       String            @map("domain_id")
+  emailAddress   String            @unique @map("email_address")
+  displayName    String?           @map("display_name")
+  mailboxQuota   BigInt            @default(1073741824) @map("mailbox_quota") // 1GB default
+  usedQuota      BigInt            @default(0) @map("used_quota")
+  imapUsername   String?           @map("imap_username")
+  imapPasswordEnc String?          @map("imap_password_enc") // Encrypted
+  status         MailAccountStatus @default(ACTIVE)
+  lastSyncAt     DateTime?         @map("last_sync_at")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain   Domain       @relation(fields: [domainId], references: [id])
+  folders  MailFolder[]
+  emailMetadata EmailMetadata[]
+
+  @@map("mail_accounts")
+}
+
+enum MailAccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+// ---- Mail Folder ----
+model MailFolder {
+  id            String     @id @default(uuid())
+  mailAccountId String     @map("mail_account_id")
+  name          String
+  displayName   String     @map("display_name")
+  type          FolderType @default(CUSTOM)
+  imapPath      String     @map("imap_path")
+  parentId      String?    @map("parent_id")
+  unreadCount   Int        @default(0) @map("unread_count")
+  totalCount    Int        @default(0) @map("total_count")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  mailAccount MailAccount @relation(fields: [mailAccountId], references: [id], onDelete: Cascade)
+  parent      MailFolder? @relation("FolderChildren", fields: [parentId], references: [id])
+  children    MailFolder[] @relation("FolderChildren")
+  emails      EmailMetadata[]
+
+  @@unique([mailAccountId, imapPath])
+  @@map("mail_folders")
+}
+
+enum FolderType {
+  INBOX
+  SENT
+  DRAFTS
+  SPAM
+  TRASH
+  ARCHIVE
+  CUSTOM
+}
+
+// ---- Email Metadata ----
+// We store metadata/index - actual body remains in IMAP
+model EmailMetadata {
+  id            String    @id @default(uuid())
+  mailAccountId String    @map("mail_account_id")
+  folderId      String    @map("folder_id")
+  uid           Int
+  messageId     String?   @map("message_id")
+  fromName      String?   @map("from_name")
+  fromAddress   String    @map("from_address")
+  toAddresses   Json      @map("to_addresses") // Array of {name, address}
+  ccAddresses   Json      @default("[]") @map("cc_addresses")
+  bccAddresses  Json      @default("[]") @map("bcc_addresses")
+  subject       String    @default("(No Subject)")
+  preview       String    @default("") // First 200 chars of plain text
+  size          Int       @default(0)
+  hasAttachments Boolean  @default(false) @map("has_attachments")
+  isRead        Boolean   @default(false) @map("is_read")
+  isStarred     Boolean   @default(false) @map("is_starred")
+  isArchived    Boolean   @default(false) @map("is_archived")
+  isDraft       Boolean   @default(false) @map("is_draft")
+  flags         String[]  @default([])
+  emailDate     DateTime? @map("email_date")
+  receivedAt    DateTime  @default(now()) @map("received_at")
+  inReplyTo     String?   @map("in_reply_to")
+  references    String[]  @default([])
+  spamScore     Float?    @map("spam_score")
+  syncedAt      DateTime  @default(now()) @map("synced_at")
+
+  mailAccount  MailAccount  @relation(fields: [mailAccountId], references: [id], onDelete: Cascade)
+  folder       MailFolder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  attachments  Attachment[]
+
+  @@unique([mailAccountId, folderId, uid])
+  @@index([mailAccountId, isRead])
+  @@index([mailAccountId, isStarred])
+  @@index([fromAddress])
+  @@index([emailDate])
+  @@map("email_metadata")
+}
+
+// ---- Attachment ----
+model Attachment {
+  id               String           @id @default(uuid())
+  emailId          String           @map("email_id")
+  filename         String
+  originalFilename String           @map("original_filename")
+  mimeType         String           @map("mime_type")
+  size             Int
+  status           AttachmentStatus @default(PENDING)
+  storageKey       String?          @map("storage_key")
+  checksum         String?
+  createdAt        DateTime         @default(now()) @map("created_at")
+
+  email EmailMetadata @relation(fields: [emailId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
+
+enum AttachmentStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+// ---- Contact ----
+model Contact {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  email       String
+  firstName   String?  @map("first_name")
+  lastName    String?  @map("last_name")
+  displayName String   @map("display_name")
+  phone       String?
+  company     String?
+  notes       String?
+  groupId     String?  @map("group_id")
+  avatarUrl   String?  @map("avatar_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group ContactGroup? @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, email])
+  @@index([userId])
+  @@map("contacts")
+}
+
+model ContactGroup {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contacts Contact[]
+
+  @@unique([userId, name])
+  @@map("contact_groups")
+}
+
+// ---- Email Settings ----
+model EmailSettings {
+  id                    String   @id @default(uuid())
+  userId                String   @unique @map("user_id")
+  timezone              String   @default("UTC")
+  language              String   @default("en")
+  theme                 String   @default("system")
+  emailsPerPage         Int      @default(50) @map("emails_per_page")
+  defaultSignatureId    String?  @map("default_signature_id")
+  replyBehavior         String   @default("reply") @map("reply_behavior")
+  autoSaveDraftInterval Int      @default(30) @map("auto_save_draft_interval")
+  showHtmlEmails        Boolean  @default(true) @map("show_html_emails")
+  loadRemoteImages      Boolean  @default(false) @map("load_remote_images")
+  notificationsEnabled  Boolean  @default(true) @map("notifications_enabled")
+  desktopNotifications  Boolean  @default(false) @map("desktop_notifications")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_settings")
+}
+
+// ---- Email Signature ----
+model EmailSignature {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  name      String
+  content   String
+  isHtml    Boolean  @default(false) @map("is_html")
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_signatures")
+}
+
+// ---- Session ----
+model Session {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  tokenHash    String   @unique @map("token_hash") // hash of refresh token
+  userAgent    String?  @map("user_agent")
+  ipAddress    String?  @map("ip_address")
+  createdAt    DateTime @default(now()) @map("created_at")
+  expiresAt    DateTime @map("expires_at")
+  lastActiveAt DateTime @default(now()) @map("last_active_at")
+  isRevoked    Boolean  @default(false) @map("is_revoked")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("sessions")
+}
+
+// ---- Login Attempt ----
+model LoginAttempt {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  email     String
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  success   Boolean
+  failureReason String? @map("failure_reason")
+  timestamp DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([email])
+  @@index([ipAddress])
+  @@index([timestamp])
+  @@map("login_attempts")
+}
+
+// ---- Password Reset ----
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  ipAddress String?  @map("ip_address")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_resets")
+}
+
+// ---- Audit Log ----
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  action     String
+  resource   String?
+  resourceId String?  @map("resource_id")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  metadata   Json?
+  timestamp  DateTime @default(now())
+  success    Boolean  @default(true)
+  errorCode  String?  @map("error_code")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([timestamp])
+  @@map("audit_logs")
+}

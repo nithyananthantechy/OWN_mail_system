@@ -1,0 +1,7 @@
+# Postfix PostgreSQL Virtual Mailbox Maps
+# Matches user email address to their Maildir directory
+hosts = localhost
+user = nitechspark
+password = changeme_development
+dbname = nitechspark_mail
+query = SELECT concat(domains.domain_name, '/', mail_accounts.imap_username, '/') FROM mail_accounts JOIN domains ON mail_accounts.domain_id = domains.id WHERE mail_accounts.email_address='%s' AND mail_accounts.status='ACTIVE'

@@ -1,0 +1,29 @@
+{
+  "name": "nitechspark-mail",
+  "version": "1.0.0",
+  "description": "NITECHSPARK Mail - Self-Hosted Business Email Platform",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=apps/web\" \"npm run dev --workspace=apps/api\"",
+    "build": "npm run build --workspace=packages/types && npm run build --workspace=apps/web && npm run build --workspace=apps/api",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "migrate": "npm run migrate --workspace=apps/api",
+    "migrate:reset": "npm run migrate:reset --workspace=apps/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

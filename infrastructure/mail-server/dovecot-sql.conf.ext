@@ -1,0 +1,13 @@
+# Dovecot SQL Configuration for PostgreSQL
+# Connects Dovecot IMAP/LMTP directly to NitechSpark database
+driver = pgsql
+connect = host=localhost dbname=nitechspark_mail user=nitechspark password=changeme_development
+
+# Default password scheme for user password hashing (Argon2id or raw crypt)
+default_pass_scheme = ARGON2ID
+
+# Password query for IMAP login authentication
+password_query = SELECT u.password_hash as password, m.email_address as user, concat('/var/mail/vhosts/', d.domain_name, '/', m.imap_username) as userdb_home, 5000 as userdb_uid, 5000 as userdb_gid FROM mail_accounts m JOIN users u ON m.user_id = u.id JOIN domains d ON m.domain_id = d.id WHERE m.email_address = '%u' AND m.status = 'ACTIVE' AND u.status = 'ACTIVE'
+
+# User query for LMTP delivery and quota lookups
+user_query = SELECT concat('/var/mail/vhosts/', d.domain_name, '/', m.imap_username) as home, 5000 as uid, 5000 as gid, concat('*:bytes=', m.mailbox_quota) as quota_rule FROM mail_accounts m JOIN domains d ON m.domain_id = d.id WHERE m.email_address = '%u' AND m.status = 'ACTIVE'

@@ -1,0 +1,6 @@
+# Postfix PostgreSQL Virtual Alias Maps
+hosts = localhost
+user = nitechspark
+password = changeme_development
+dbname = nitechspark_mail
+query = SELECT email_address FROM mail_accounts WHERE email_address='%s' AND status='ACTIVE'

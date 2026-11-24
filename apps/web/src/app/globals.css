@@ -1,0 +1,220 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- Base Styles ---- */
+@layer base {
+  :root {
+    --scrollbar-track: #1e293b;
+    --scrollbar-thumb: #334155;
+    --scrollbar-thumb-hover: #4f46e5;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+  *::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+
+  html { @apply antialiased; }
+  body { @apply font-sans bg-surface-950 text-surface-100; }
+}
+
+/* ---- Component Styles ---- */
+@layer components {
+  /* Glass morphism card */
+  .glass-card {
+    @apply bg-surface-900/80 backdrop-blur-sm border border-surface-700/50 rounded-xl;
+  }
+
+  .glass-card-light {
+    @apply bg-white/90 backdrop-blur-sm border border-surface-200/80 rounded-xl;
+  }
+
+  /* Sidebar navigation item */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+           text-surface-400 hover:text-surface-100 hover:bg-surface-800
+           transition-all duration-150 cursor-pointer select-none;
+  }
+
+  .nav-item-active {
+    @apply nav-item bg-brand-600/20 text-brand-400 hover:bg-brand-600/30 hover:text-brand-300;
+  }
+
+  /* Mail list item */
+  .mail-item {
+    @apply flex items-start gap-3 px-4 py-3 border-b border-surface-800
+           hover:bg-surface-800/50 cursor-pointer transition-colors duration-100
+           relative;
+  }
+
+  .mail-item-unread {
+    @apply mail-item bg-surface-900;
+  }
+
+  .mail-item-selected {
+    @apply mail-item bg-brand-600/10 border-l-2 border-l-brand-500;
+  }
+
+  /* Button variants */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-500
+           text-white text-sm font-semibold rounded-lg transition-all duration-150
+           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed
+           shadow-sm hover:shadow-glow-brand;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-surface-800 hover:bg-surface-700
+           text-surface-200 text-sm font-medium rounded-lg transition-all duration-150
+           border border-surface-700 active:scale-95;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30
+           text-red-400 text-sm font-medium rounded-lg transition-all duration-150
+           border border-red-500/30 active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-3 py-2
+           text-surface-400 hover:text-surface-200 hover:bg-surface-800
+           text-sm font-medium rounded-lg transition-all duration-150 active:scale-95;
+  }
+
+  .btn-icon {
+    @apply p-2 rounded-lg text-surface-400 hover:text-surface-200 hover:bg-surface-800
+           transition-all duration-150 active:scale-95;
+  }
+
+  /* Input styles */
+  .input-field {
+    @apply w-full px-4 py-2.5 bg-surface-800 border border-surface-700
+           text-surface-100 placeholder-surface-500 rounded-lg text-sm
+           focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500
+           transition-all duration-150;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-unread {
+    @apply badge bg-brand-600/20 text-brand-400;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    @apply absolute z-50 px-2 py-1 text-xs font-medium text-white bg-surface-900
+           rounded-md shadow-lg border border-surface-700 whitespace-nowrap pointer-events-none;
+  }
+
+  /* Loading skeleton */
+  .skeleton {
+    @apply bg-surface-800 rounded animate-pulse;
+  }
+
+  /* Status indicators */
+  .status-dot-green { @apply w-2 h-2 rounded-full bg-cyber-500; }
+  .status-dot-red { @apply w-2 h-2 rounded-full bg-red-500; }
+  .status-dot-yellow { @apply w-2 h-2 rounded-full bg-amber-500; }
+  .status-dot-gray { @apply w-2 h-2 rounded-full bg-surface-500; }
+
+  /* Email content display - sandboxed styles */
+  .email-body {
+    @apply text-surface-200 text-sm leading-relaxed;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
+  .email-body a {
+    @apply text-brand-400 underline;
+  }
+
+  /* Compose toolbar button */
+  .toolbar-btn {
+    @apply p-1.5 rounded text-surface-400 hover:text-surface-200 hover:bg-surface-700
+           transition-colors text-sm font-medium;
+  }
+
+  /* Quota bar */
+  .quota-bar {
+    @apply h-1.5 rounded-full bg-surface-700 overflow-hidden;
+  }
+
+  .quota-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+
+  /* Cyber grid background */
+  .cyber-grid {
+    background-image: linear-gradient(rgba(99,102,241,0.05) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(99,102,241,0.05) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+}
+
+/* ---- Utilities ---- */
+@layer utilities {
+  .text-gradient-brand {
+    @apply bg-gradient-to-r from-brand-400 to-cyber-400 bg-clip-text text-transparent;
+  }
+
+  .border-gradient-brand {
+    border-image: linear-gradient(135deg, #6366f1, #22c55e) 1;
+  }
+
+  .glow-brand {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+  }
+
+  .no-select { user-select: none; }
+
+  /* Email HTML sanitized content override */
+  .sanitized-email * {
+    max-width: 100% !important;
+  }
+  .sanitized-email table {
+    width: 100% !important;
+  }
+}
+
+/* ---- Custom scrollbar for mail list ---- */
+.mail-list-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* ---- Animations ---- */
+@keyframes slideInFromLeft {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeScale {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-slide-in { animation: slideInFromLeft 0.2s ease-out; }
+.animate-fade-scale { animation: fadeScale 0.2s ease-out; }
+
+/* ---- Compose editor overrides ---- */
+.ql-toolbar { @apply border-surface-700 rounded-t-lg; }
+.ql-container { @apply border-surface-700 rounded-b-lg; }
+.ql-editor { @apply min-h-[200px] text-surface-100; }
+
+/* ---- Print styles ---- */
+@media print {
+  .sidebar, .mail-list, .toolbar { display: none !important; }
+  .email-body { color: #000 !important; }
+}
